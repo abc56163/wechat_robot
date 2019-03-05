@@ -1,0 +1,89 @@
+2019-02-22 15:28:35
+From:你好
+To:您说什么我不明白！您可以美事扫工位二维码提单哦！
+2019-02-22 15:30:42
+From:你好
+To:您说什么我不明白！您可以美事扫工位二维码提单哦！
+2019-02-22 15:31:11
+From:你搞
+To:您说什么我不明白！您可以美事扫工位二维码提单哦！
+2019-02-22 15:34:13
+From:你好
+To:您说什么我不明白！您可以美事扫工位二维码提单哦！
+2019-02-22 15:34:31
+From:你好
+To:您说什么我不明白！您可以美事扫工位二维码提单哦！
+2019-02-22 15:35:56
+From:你好
+To:您说什么我不明白！您可以美事扫工位二维码提单哦！
+2019-02-22 15:54:53
+From:你好
+To:您说什么我不明白！您可以美事扫工位二维码提单哦！
+2019-02-22 15:56:09
+From:acl number 3601
+ rule 0 permit ip destination 10.246.5.0 0.0.0.255
+ rule 5 permit ip destination 10.252.88.100 0
+ rule 10 permit tcp destination 10.252.88.0 0.0.0.255 destination-port eq 445
+ rule 15 permit ip source 10.246.5.250 0.0.0.1 destin 10.246.0.0 0.0.255.255
+ rule 20  permit ip source 10.246.5.250 0.0.0.1 destination 10.252.88.200 0
+ rule 30 permit ip source 10.246.5.250 0.0.0.1 destination 10.252.88.21 0
+ rule 35 permit ip source 10.246.5.250 0.0.0.1 destination 10.251.6.2 0.0.0.1
+ rule 80 permit tcp destination 10.249.7.140 0 destination-port eq 445
+acl number 3602
+ rule 0 permit tcp destination-port eq 445
+ rule 5 permit tcp destination-port eq 135
+ rule 10 permit tcp destination-port eq 138
+ rule 15 permit tcp destination-port eq 139
+
+traffic classifier port-limit operator and
+ if-match acl 3602
+traffic classifier port-permit operator and
+ if-match acl 3601
+#
+traffic behavior port-limit
+ filter deny
+traffic behavior port-permit
+ filter permit
+#               
+qos policy port-limit
+ classifier port-permit behavior port-permit
+ classifier port-limit behavior port-limit
+
+qos apply policy port-limit global inbound   
+To:您说什么我不明白！您可以美事扫工位二维码提单哦！
+2019-03-05 13:51:29
+From:你好
+To:您说什么我不明白！您可以美事扫工位二维码提单哦！
+2019-03-05 13:52:01
+From:11
+To:您说什么我不明白！您可以美事扫工位二维码提单哦！
+2019-03-05 14:03:47
+From:1
+To:a1lzp4
+2019-03-05 14:04:33
+From:昌老师下午好
+To:您说什么我不明白！您可以美事扫工位二维码提单哦！
+2019-03-05 14:04:33
+From:[坏笑]
+To:8nyb3q
+2019-03-05 14:06:31
+From:嘿嘿
+To:this is test
+2019-03-05 14:10:51
+From:哈哈
+To:this is test
+2019-03-05 14:26:55
+From:123
+To:您说什么我不明白！您可以美事扫工位二维码提单哦！
+2019-03-05 14:27:00
+From:我曹
+To:您说什么我不明白！您可以美事扫工位二维码提单哦！
+2019-03-05 14:27:01
+From:这个好玩
+To:您说什么我不明白！您可以美事扫工位二维码提单哦！
+2019-03-05 14:27:05
+From:给我来玩玩
+To:您说什么我不明白！您可以美事扫工位二维码提单哦！
+2019-03-05 14:27:17
+From:源码给我玩玩
+To:您说什么我不明白！您可以美事扫工位二维码提单哦！
