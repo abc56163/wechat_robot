@@ -10,7 +10,7 @@ import time
 
 db = MySQLdb.connect("localhost", "root", "Abcd520025@", "study", charset='utf8')
 cursor = db.cursor()
-EXPR_DONT_UNDERSTAND = '您说什么我不明白！您可以美事扫工位二维码提单哦！'
+EXPR_DONT_UNDERSTAND = '未匹配到关键词'
 
 class WeChat(Thread):
     def __init__(self):
@@ -26,7 +26,7 @@ class WeChat(Thread):
             return text
         except:
             try:
-                seg_list = jieba.cut(msg, cut_all=True)
+                seg_list = jieba.cut(msg, cut_all=False)
                 t = True
                 while t:
                     cursor.execute('select * from robot where keyword LIKE "%{}%"'.format(next(seg_list)))
