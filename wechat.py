@@ -1,4 +1,5 @@
 import jieba
+jieba.load_userdict('dict.txt')
 import MySQLdb
 import itchat
 import threading
@@ -22,9 +23,8 @@ class WeChat(Thread):
             t = True
             if a == ():
                 seg_list = jieba.cut(msg, cut_all=True)
-                b = (i for i in seg_list)
                 while t:
-                    cursor.execute('select * from s1 where code LIKE "%{}%"' .format(next(b)))
+                    cursor.execute('select * from s1 where code LIKE "%{}%"' .format(next(seg_list)))
                     a = cursor.fetchall()
                     text = a[0][1]
                     if a != ():
