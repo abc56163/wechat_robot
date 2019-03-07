@@ -41,14 +41,11 @@ class WeChat(Thread):
                 return text
 
 
-
-
-
-
     def run(self):
         @itchat.msg_register('Text')
         def reply(msg):
-            text = msg.text
+            text = msg.text.strip()
+
             print(msg)
             info = self.database_search(text)
             print('From:',text,'\n'+'To:',info)
@@ -61,7 +58,7 @@ class WeChat(Thread):
             # text = msg.text
             # info = get_reponse(text)
             myUserName = itchat.get_friends(update=True)[0]["UserName"]
-            if not msg['FromUserName'] == myUserName or info != EXPR_DONT_UNDERSTAND:
+            if not msg['FromUserName'] == myUserName and info != EXPR_DONT_UNDERSTAND:
                 itchat.send(info, msg['FromUserName'])
             else:
                 pass
@@ -77,7 +74,7 @@ class WeChat(Thread):
             print(msg['User']['UserName'])
             print(text)
             myUserName = itchat.get_friends(update=True)[0]["UserName"]
-            if not msg['User']['UserName'] == myUserName:
+            if not msg['User']['UserName'] == myUserName and info != EXPR_DONT_UNDERSTAND:
                 itchat.send(info, msg['User']['UserName'])
 
 
