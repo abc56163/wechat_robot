@@ -1,5 +1,6 @@
 import jieba
-jieba.load_userdict('dict.txt')
+import os
+jieba.load_userdict(os.path.dirname(__file__)+'/dict.txt')
 import MySQLdb
 import itchat
 import threading
@@ -9,6 +10,7 @@ import time
 
 db = MySQLdb.connect("localhost", "root", "Abcd520025@", "study", charset='utf8')
 cursor = db.cursor()
+EXPR_DONT_UNDERSTAND = '您说什么我不明白！您可以美事扫工位二维码提单哦！'
 
 class WeChat(Thread):
     def __init__(self):
@@ -18,21 +20,28 @@ class WeChat(Thread):
 
     def database_search(self, msg):
         try:
-            cursor.execute('select * from s1 where code LIKE "%s"' % msg)
+            cursor.execute('select * from robot where keyword LIKE "%s"' % msg)
             a = cursor.fetchall()
-            t = True
-            if a == ():
+            text = a[0][2]
+            return text
+        except:
+            try:
                 seg_list = jieba.cut(msg, cut_all=True)
+                t = True
                 while t:
-                    cursor.execute('select * from s1 where code LIKE "%{}%"' .format(next(seg_list)))
+                    cursor.execute('select * from robot where keyword LIKE "%{}%"'.format(next(seg_list)))
                     a = cursor.fetchall()
-                    text = a[0][1]
                     if a != ():
+                        text = a[0][2]
                         t = False
                 return text
-        except:
-            return '您说什么我不明白！您可以美事扫工位二维码提单哦！'
-            # return 'this is test'
+            except:
+
+                text = EXPR_DONT_UNDERSTAND
+                return text
+
+
+
 
 
 
@@ -52,8 +61,10 @@ class WeChat(Thread):
             # text = msg.text
             # info = get_reponse(text)
             myUserName = itchat.get_friends(update=True)[0]["UserName"]
-            if not msg['FromUserName'] == myUserName:
+            if not msg['FromUserName'] == myUserName or info != EXPR_DONT_UNDERSTAND:
                 itchat.send(info, msg['FromUserName'])
+            else:
+                pass
 
         @itchat.msg_register('Text', isGroupChat=True)
         def group_reply(msg):
