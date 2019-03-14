@@ -17,35 +17,32 @@ class WeChat(Thread):
         super().__init__()
         pass
 
-
     def database_search(self, msg):
-        try:
-            cursor.execute('select * from robot where keyword LIKE "%s"' % msg)
-            a = cursor.fetchall()
+        cursor.execute('select * from robot where keyword LIKE "%{}%";'.format(msg))
+        a = cursor.fetchall()
+        if a != ():
             text = a[0][2]
             return text
-        except:
+        else:
             try:
                 seg_list = jieba.cut(msg, cut_all=False)
+                print(jieba.lcut(msg, cut_all=False))
                 t = True
                 while t:
-                    cursor.execute('select * from robot where keyword LIKE "%{}%"'.format(next(seg_list)))
+                    cursor.execute('select * from robot where keyword LIKE "{}";'.format(next(seg_list)))
                     a = cursor.fetchall()
                     if a != ():
                         text = a[0][2]
                         t = False
                 return text
-            except:
-
+            except StopIteration:
                 text = EXPR_DONT_UNDERSTAND
                 return text
-
 
     def run(self):
         @itchat.msg_register('Text')
         def reply(msg):
-            text = msg.text.strip()
-
+            text = msg.text.replace(' ','')
             print(msg)
             info = self.database_search(text)
             print('From:',text,'\n'+'To:',info)
