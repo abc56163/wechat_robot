@@ -1,54 +1,68 @@
-import jieba
 import os
-jieba.load_userdict(os.path.dirname(__file__)+'/dict.txt')
 import MySQLdb
 import itchat
 import threading
 from threading import *
 import time
+import jieba
+
+jieba.load_userdict(os.path.dirname(__file__)+'/dict.txt')
 
 
-db = MySQLdb.connect("localhost", "root", "Abcd520025@", "study", charset='utf8')
-cursor = db.cursor()
+db = MySQLdb.connect("localhost", "root", "Abcd520025@", "58dh", charset='utf8')
+
+
+def mysql_connection(db):
+    try:
+        db.ping()
+    except:
+        db = MySQLdb.connect("localhost", "root", "Abcd520025@", "58dh", charset='utf8')
+    return db
+
+
 EXPR_DONT_UNDERSTAND = '未匹配到关键词'
+cursor = mysql_connection(db).cursor()
+
 
 class WeChat(Thread):
     def __init__(self):
         super().__init__()
+        self.cursor = mysql_connection(db).cursor()
         pass
 
     def database_search(self, msg):
-        cursor.execute('select * from robot where keyword LIKE "%{}%";'.format(msg))
-        a = cursor.fetchall()
-        if a != ():
-            text = a[0][2]
+        text = ''
+        try:
+            seg_list = jieba.cut(msg, cut_all=False)
+            print(jieba.lcut(msg, cut_all=False))
+            t = True
+            while t:
+                cursor.execute('select * from 58_robot_2 where keyword LIKE "{}";'.format(next(seg_list)))
+                a = cursor.fetchall()
+                if a != ():
+                    text = a[0][2]
+                    t = False
             return text
-        else:
-            try:
-                seg_list = jieba.cut(msg, cut_all=False)
-                print(jieba.lcut(msg, cut_all=False))
-                t = True
-                while t:
-                    cursor.execute('select * from robot where keyword LIKE "{}";'.format(next(seg_list)))
-                    a = cursor.fetchall()
-                    if a != ():
-                        text = a[0][2]
-                        t = False
-                return text
-            except StopIteration:
-                text = EXPR_DONT_UNDERSTAND
-                return text
+        except StopIteration:
+            text = EXPR_DONT_UNDERSTAND
+            return text
 
     def run(self):
         @itchat.msg_register('Text')
         def reply(msg):
-            text = msg.text.replace(' ','')
+            text = msg.text.replace(' ', '')
             print(msg)
             info = self.database_search(text)
-            print('From:',text,'\n'+'To:',info)
+            # print('From:',text,'\n'+'To:',info)
             msg_time = time.strftime("%Y-%m-%d %H:%M:%S",time.localtime())
-            with open('wechat_msg_log.txt','a') as wc:
-                wc.write('{}{}{}'.format(msg_time+'\n','From:'+text,'\n'+'To:'+info+'\n'))
+            try:
+                cursor.execute('insert into 58_robot_3 (im, time, question, answer) values ("Wecht", "{}", "{}", "{}")'
+                               .format(msg_time, text, info))
+                db.commit()
+            except:
+                db.rollback()
+            # with open('wechat_msg_log.txt','a') as wc:
+            #     wc.write('{}{}{}'.format(msg_time+'\n','From:'+text,'\n'+'To:'+info+'\n'))
             # user = msg['User']
             # print(msg)
             # print('%s %s'%(user['UserName'],msg.text))
@@ -66,9 +80,15 @@ class WeChat(Thread):
             info = self.database_search(text)
             print('From:', text, '\n' + 'To:', info)
             msg_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
-            with open('wechat_msg_group_log.txt', 'a') as wc:
-                wc.write('{}{}{}'.format(msg_time + '\n', 'From:' + text, '\n' + 'To:' + info + '\n'))
-            print(msg['User']['UserName'])
+            try:
+                cursor.execute('insert into 58_robot_3 (im, time, question, answer) values ("Wecht", "{}", "{}", "{}")'
+                               .format(msg_time, text, info))
+                db.commit()
+            except:
+                db.rollback()
+            # with open('wechat_msg_group_log.txt', 'a') as wc:
+            #     wc.write('{}{}{}'.format(msg_time + '\n', 'From:' + text, '\n' + 'To:' + info + '\n'))
+            # print(msg['User']['UserName'])
             print(text)
             myUserName = itchat.get_friends(update=True)[0]["UserName"]
             if not msg['User']['UserName'] == myUserName and info != EXPR_DONT_UNDERSTAND:
@@ -87,8 +107,6 @@ def main():
     for t in [t1,t2,t3,t4,t5,t6,t7,t8]:
         t.start()
         t.join()
-
-
 
 
 if __name__ == '__main__':
