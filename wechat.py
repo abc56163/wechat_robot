@@ -6,8 +6,8 @@ from threading import *
 import time
 import jieba
 
-jieba.load_userdict(os.path.dirname(__file__)+'/dict.txt')
-
+base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+jieba.load_userdict(base_dir+'/dict.txt')
 
 db = MySQLdb.connect("localhost", "root", "Abcd520025@", "58dh", charset='utf8')
 
@@ -61,15 +61,15 @@ class WeChat(Thread):
                 db.commit()
             except:
                 db.rollback()
-            # with open('wechat_msg_log.txt','a') as wc:
+            # with open('wechat_msg_log1.txt','a') as wc:
             #     wc.write('{}{}{}'.format(msg_time+'\n','From:'+text,'\n'+'To:'+info+'\n'))
             # user = msg['User']
             # print(msg)
             # print('%s %s'%(user['UserName'],msg.text))
             # text = msg.text
             # info = get_reponse(text)
-            myUserName = itchat.get_friends(update=True)[0]["UserName"]
-            if not msg['FromUserName'] == myUserName and info != EXPR_DONT_UNDERSTAND:
+            myusername = itchat.get_friends(update=True)[0]["UserName"]
+            if not msg['FromUserName'] == myusername and info != EXPR_DONT_UNDERSTAND:
                 itchat.send(info, msg['FromUserName'])
             else:
                 pass
@@ -86,12 +86,12 @@ class WeChat(Thread):
                 db.commit()
             except:
                 db.rollback()
-            # with open('wechat_msg_group_log.txt', 'a') as wc:
+            # with open('wechat_msg_group_log1.txt', 'a') as wc:
             #     wc.write('{}{}{}'.format(msg_time + '\n', 'From:' + text, '\n' + 'To:' + info + '\n'))
             # print(msg['User']['UserName'])
             print(text)
-            myUserName = itchat.get_friends(update=True)[0]["UserName"]
-            if not msg['User']['UserName'] == myUserName and info != EXPR_DONT_UNDERSTAND:
+            myusername = itchat.get_friends(update=True)[0]["UserName"]
+            if not msg['User']['UserName'] == myusername and info != EXPR_DONT_UNDERSTAND:
                 itchat.send(info, msg['User']['UserName'])
 
 
