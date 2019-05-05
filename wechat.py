@@ -6,7 +6,7 @@ from threading import *
 import time
 import jieba
 
-base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 jieba.load_userdict(base_dir+'/dict.txt')
 
 db = MySQLdb.connect("localhost", "root", "Abcd520025@", "58dh", charset='utf8')
@@ -21,6 +21,7 @@ def mysql_connection(db):
 
 
 EXPR_DONT_UNDERSTAND = '未匹配到关键词'
+supplement = "\n\n更多解决方案可以输入下列关键词:电话问题,电脑问题,网络问题来获取更多帮助!\n您也可以直接美式扫工位二维码或online在线提单来快速联系IT!"
 cursor = mysql_connection(db).cursor()
 
 
@@ -32,19 +33,37 @@ class WeChat(Thread):
 
     def database_search(self, msg):
         text = ''
-        try:
-            seg_list = jieba.cut(msg, cut_all=False)
-            print(jieba.lcut(msg, cut_all=False))
-            t = True
-            while t:
-                cursor.execute('select * from 58_robot_2 where keyword LIKE "{}";'.format(next(seg_list)))
-                a = cursor.fetchall()
-                if a != ():
-                    text = a[0][2]
-                    t = False
+        if msg in ('电话问题', '电脑问题', '网络问题'):
+            table = '58_robot_1'
+            cursor.execute('select * from {} where keyword LIKE "{}";'.format(table, msg))
+            a = cursor.fetchall()
+            if a != ():
+                text = a[0][2]
             return text
-        except StopIteration:
-            text = EXPR_DONT_UNDERSTAND
+        elif '关键词/' in msg:
+            key = msg.split('/')[1]
+            with open(base_dir + '/dict.txt', 'a') as k:
+                k.write(key + ' ' + '2000' + '\n')
+            jieba.add_word(key)
+            des = ''
+            text = '关键词已经添加' + des
+            return text
+        else:
+            dict_list = []
+            table = '58_robot_2'
+            des = supplement
+            print(jieba.lcut(msg, cut_all=False, HMM=False))
+            for x in jieba.cut(msg, cut_all=False, HMM=False):
+                dict_list.append(x)
+            num_list = [len(o) for o in dict_list]
+            if max(num_list) == 0:
+                a = None
+            else:
+                seg = dict_list[num_list.index(max(num_list))]
+                cursor.execute('select * from {} where keyword LIKE "{}";'.format(table, seg))
+                a = cursor.fetchall()
+            if a != ():
+                text = a[0][2] + des
             return text
 
     def run(self):
@@ -104,12 +123,12 @@ def main():
     t6 = WeChat()
     t7 = WeChat()
     t8 = WeChat()
-    for t in [t1,t2,t3,t4,t5,t6,t7,t8]:
+    for t in [t1, t2, t3, t4, t5, t6, t7, t8]:
         t.start()
         t.join()
 
 
 if __name__ == '__main__':
     main()
-    itchat.auto_login(True)
+    itchat.auto_login(True, enableCmdQR=True)
     itchat.run()
