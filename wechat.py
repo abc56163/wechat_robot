@@ -6,6 +6,7 @@ from threading import *
 import time
 import jieba
 
+
 base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 jieba.load_userdict(base_dir+'/dict.txt')
 
@@ -20,23 +21,19 @@ def mysql_connection(db):
     return db
 
 
-EXPR_DONT_UNDERSTAND = '未匹配到关键词'
-supplement = "\n\n更多解决方案可以输入下列关键词:电话问题,电脑问题,网络问题来获取更多帮助!\n您也可以直接美式扫工位二维码或online在线提单来快速联系IT!"
-cursor = mysql_connection(db).cursor()
-
-
 class WeChat(Thread):
     def __init__(self):
         super().__init__()
         self.cursor = mysql_connection(db).cursor()
-        pass
+        self.EXPR_DONT_UNDERSTAND = '未匹配到关键词'
+        self.supplement = "\n\n更多解决方案可以输入下列关键词:电话问题,电脑问题,网络问题来获取更多帮助!\n您也可以直接美式扫工位二维码或online在线提单来快速联系IT!"
 
     def database_search(self, msg):
         text = ''
         if msg in ('电话问题', '电脑问题', '网络问题'):
             table = '58_robot_1'
-            cursor.execute('select * from {} where keyword LIKE "{}";'.format(table, msg))
-            a = cursor.fetchall()
+            self.cursor.execute('select * from {} where keyword LIKE "{}";'.format(table, msg))
+            a = self.cursor.fetchall()
             if a != ():
                 text = a[0][2]
             return text
@@ -51,7 +48,7 @@ class WeChat(Thread):
         else:
             dict_list = []
             table = '58_robot_2'
-            des = supplement
+            des = self.supplement
             print(jieba.lcut(msg, cut_all=False, HMM=False))
             for x in jieba.cut(msg, cut_all=False, HMM=False):
                 dict_list.append(x)
@@ -60,22 +57,22 @@ class WeChat(Thread):
                 a = None
             else:
                 seg = dict_list[num_list.index(max(num_list))]
-                cursor.execute('select * from {} where keyword LIKE "{}";'.format(table, seg))
-                a = cursor.fetchall()
+                self.cursor.execute('select * from {} where keyword LIKE "{}";'.format(table, seg))
+                a = self.cursor.fetchall()
             if a != ():
                 text = a[0][2] + des
             return text
 
     def run(self):
-        @itchat.msg_register('Text')
+        @newinstance.msg_register('Text')
         def reply(msg):
             text = msg.text.replace(' ', '')
-            print(msg)
+            # print(msg)
             info = self.database_search(text)
             # print('From:',text,'\n'+'To:',info)
             msg_time = time.strftime("%Y-%m-%d %H:%M:%S",time.localtime())
             try:
-                cursor.execute('insert into 58_robot_3 (im, time, question, answer) values ("Wecht", "{}", "{}", "{}")'
+                self.cursor.execute('insert into 58_robot_3 (im, time, question, answer) values ("Wechat", "{}", "{}", "{}")'
                                .format(msg_time, text, info))
                 db.commit()
             except:
@@ -87,20 +84,24 @@ class WeChat(Thread):
             # print('%s %s'%(user['UserName'],msg.text))
             # text = msg.text
             # info = get_reponse(text)
-            myusername = itchat.get_friends(update=True)[0]["UserName"]
-            if not msg['FromUserName'] == myusername and info != EXPR_DONT_UNDERSTAND:
-                itchat.send(info, msg['FromUserName'])
-            else:
-                pass
+            # 不回复自己的消息
+            # myusername = newinstance.get_friends(update=True)[0]["UserName"]
+            # if not msg['FromUserName'] == myusername and info != EXPR_DONT_UNDERSTAND:
+            #     itchat.send(info, msg['FromUserName'])
+            # else:
+            #     pass
 
-        @itchat.msg_register('Text', isGroupChat=True)
+            if info != self.EXPR_DONT_UNDERSTAND:
+                newinstance.send(info, msg['FromUserName'])
+
+        @newinstance.msg_register('Text', isGroupChat=True)
         def group_reply(msg):
             text = msg.text
             info = self.database_search(text)
             print('From:', text, '\n' + 'To:', info)
             msg_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
             try:
-                cursor.execute('insert into 58_robot_3 (im, time, question, answer) values ("Wecht", "{}", "{}", "{}")'
+                self.cursor.execute('insert into 58_robot_3 (im, time, question, answer) values ("Wechat", "{}", "{}", "{}")'
                                .format(msg_time, text, info))
                 db.commit()
             except:
@@ -108,10 +109,15 @@ class WeChat(Thread):
             # with open('wechat_msg_group_log1.txt', 'a') as wc:
             #     wc.write('{}{}{}'.format(msg_time + '\n', 'From:' + text, '\n' + 'To:' + info + '\n'))
             # print(msg['User']['UserName'])
-            print(text)
-            myusername = itchat.get_friends(update=True)[0]["UserName"]
-            if not msg['User']['UserName'] == myusername and info != EXPR_DONT_UNDERSTAND:
-                itchat.send(info, msg['User']['UserName'])
+            #print(text)
+
+            # 不回复自己的消息
+
+            # myusername = newinstance.get_friends(update=True)[0]["UserName"]
+            # if not msg['User']['UserName'] == myusername and info != EXPR_DONT_UNDERSTAND:
+            #     itchat.send(info, msg['User']['UserName'])
+            if info != self.EXPR_DONT_UNDERSTAND:
+                newinstance.send(info, msg['User']['UserName'])
 
 
 def main():
@@ -127,8 +133,10 @@ def main():
         t.start()
         t.join()
 
-
 if __name__ == '__main__':
+    pkl_dir = os.path.dirname(os.path.abspath(__file__))
+    name, py = os.path.basename(__file__).split('.')
+    newinstance = itchat.new_instance()
+    newinstance.auto_login(hotReload=True, enableCmdQR=-2, statusStorageDir='%s/pkls/%s.pkl' % (pkl_dir, name))
     main()
-    itchat.auto_login(True, enableCmdQR=True)
-    itchat.run()
+    newinstance.run()
