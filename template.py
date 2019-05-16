@@ -37,14 +37,38 @@ class WeChat(Thread):
             if a != ():
                 text = a[0][2]
             return text
-        elif '关键词/' in msg:
-            key = msg.split('/')[1]
-            with open(base_dir + '/dict.txt', 'a') as k:
-                k.write(key + ' ' + '2000' + '\n')
-            jieba.add_word(key)
-            des = ''
-            text = '关键词已经添加' + des
-            return text
+        elif 'add-' in msg:
+            key = msg.split('-')[1]
+            if key != '':
+                with open(base_dir + '/dict.txt', 'a') as k:
+                    k.write(key + ' ' + '10' + '\n')
+                jieba.add_word(key)
+                text = '关键词已经激活'
+                return text
+            else:
+                text = '请按照此格式激活:add-关键词'
+                return text
+        elif 'del-' in msg:
+            dict_txt = []
+            key = msg.split('-')[1]
+            if key != '':
+                fp = open(base_dir + '/dict.txt', 'r')
+                txt = fp.readlines()
+                for i in txt:
+                    if key in i:
+                        jieba.del_word(key)
+                    else:
+                        dict_txt.append(i)
+                fp.close()
+
+                with open(base_dir + '/dict.txt', 'w+') as fp:
+                    for i in dict_txt:
+                        fp.write(i)
+                text = '关键词已经删除'
+                return text
+            else:
+                text = '请按照此格式删除:del-关键词'
+                return text
         else:
             dict_list = []
             table = '58_robot_2'
@@ -53,7 +77,7 @@ class WeChat(Thread):
             for x in jieba.cut(msg, cut_all=False, HMM=False):
                 dict_list.append(x)
             num_list = [len(o) for o in dict_list]
-            if max(num_list) == 0:
+            if max(num_list, default=0) in [0, 1]:
                 a = None
             else:
                 seg = dict_list[num_list.index(max(num_list))]
@@ -61,6 +85,8 @@ class WeChat(Thread):
                 a = self.cursor.fetchall()
             if a != ():
                 text = a[0][2] + des
+            else:
+                text = self.EXPR_DONT_UNDERSTAND
             return text
 
     def run(self):
@@ -70,13 +96,6 @@ class WeChat(Thread):
             # print(msg)
             info = self.database_search(text)
             # print('From:',text,'\n'+'To:',info)
-            msg_time = time.strftime("%Y-%m-%d %H:%M:%S",time.localtime())
-            try:
-                self.cursor.execute('insert into 58_robot_3 (im, time, question, answer) values ("Wechat", "{}", "{}", "{}")'
-                               .format(msg_time, text, info))
-                db.commit()
-            except:
-                db.rollback()
             # with open('wechat_msg_log1.txt','a') as wc:
             #     wc.write('{}{}{}'.format(msg_time+'\n','From:'+text,'\n'+'To:'+info+'\n'))
             # user = msg['User']
@@ -92,6 +111,14 @@ class WeChat(Thread):
             #     pass
 
             if info != self.EXPR_DONT_UNDERSTAND:
+                msg_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+                try:
+                    self.cursor.execute(
+                        'insert into 58_robot_3 (im, time, question, answer) values ("Wechat", "{}", "{}", "{}")'
+                        .format(msg_time, text, info))
+                    db.commit()
+                except:
+                    db.rollback()
                 newinstance.send(info, msg['FromUserName'])
 
         @newinstance.msg_register('Text', isGroupChat=True)
@@ -99,13 +126,6 @@ class WeChat(Thread):
             text = msg.text
             info = self.database_search(text)
             print('From:', text, '\n' + 'To:', info)
-            msg_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
-            try:
-                self.cursor.execute('insert into 58_robot_3 (im, time, question, answer) values ("Wechat", "{}", "{}", "{}")'
-                               .format(msg_time, text, info))
-                db.commit()
-            except:
-                db.rollback()
             # with open('wechat_msg_group_log1.txt', 'a') as wc:
             #     wc.write('{}{}{}'.format(msg_time + '\n', 'From:' + text, '\n' + 'To:' + info + '\n'))
             # print(msg['User']['UserName'])
@@ -117,6 +137,14 @@ class WeChat(Thread):
             # if not msg['User']['UserName'] == myusername and info != EXPR_DONT_UNDERSTAND:
             #     itchat.send(info, msg['User']['UserName'])
             if info != self.EXPR_DONT_UNDERSTAND:
+                msg_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+                try:
+                    self.cursor.execute(
+                        'insert into 58_robot_3 (im, time, question, answer) values ("Wechat", "{}", "{}", "{}")'
+                        .format(msg_time, text, info))
+                    db.commit()
+                except:
+                    db.rollback()
                 newinstance.send(info, msg['User']['UserName'])
 
 
@@ -132,6 +160,7 @@ def main():
     for t in [t1, t2, t3, t4, t5, t6, t7, t8]:
         t.start()
         t.join()
+
 
 if __name__ == '__main__':
     pkl_dir = os.path.dirname(os.path.abspath(__file__))
