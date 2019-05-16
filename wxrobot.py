@@ -5,26 +5,18 @@ import threading
 from threading import *
 import time
 import jieba
+from config import databases
 
 
 base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 jieba.load_userdict(base_dir+'/dict.txt')
 
-db = MySQLdb.connect("localhost", "root", "Abcd520025@", "58dh", charset='utf8')
-
-
-def mysql_connection(db):
-    try:
-        db.ping()
-    except:
-        db = MySQLdb.connect("localhost", "root", "Abcd520025@", "58dh", charset='utf8')
-    return db
-
 
 class WeChat(Thread):
     def __init__(self):
         super().__init__()
-        self.cursor = mysql_connection(db).cursor()
+        self.db = databases()
+        self.cursor = databases().cursor()
         self.EXPR_DONT_UNDERSTAND = '未匹配到关键词'
         self.supplement = "\n\n更多解决方案可以输入下列关键词:电话问题,电脑问题,网络问题来获取更多帮助!\n您也可以直接美式扫工位二维码或online在线提单来快速联系IT!"
 
@@ -90,7 +82,7 @@ class WeChat(Thread):
             return text
 
     def run(self):
-        @newinstance.msg_register('Text')
+        @newInstance.msg_register('Text')
         def reply(msg):
             text = msg.text.replace(' ', '')
             # print(msg)
@@ -116,12 +108,12 @@ class WeChat(Thread):
                     self.cursor.execute(
                         'insert into 58_robot_3 (im, time, question, answer) values ("Wechat", "{}", "{}", "{}")'
                         .format(msg_time, text, info))
-                    db.commit()
+                    self.db.commit()
                 except:
-                    db.rollback()
-                newinstance.send(info, msg['FromUserName'])
+                    self.db.rollback()
+                newInstance.send(info, msg['FromUserName'])
 
-        @newinstance.msg_register('Text', isGroupChat=True)
+        @newInstance.msg_register('Text', isGroupChat=True)
         def group_reply(msg):
             text = msg.text
             info = self.database_search(text)
@@ -142,10 +134,10 @@ class WeChat(Thread):
                     self.cursor.execute(
                         'insert into 58_robot_3 (im, time, question, answer) values ("Wechat", "{}", "{}", "{}")'
                         .format(msg_time, text, info))
-                    db.commit()
+                    self.db.commit()
                 except:
-                    db.rollback()
-                newinstance.send(info, msg['User']['UserName'])
+                    self.db.rollback()
+                newInstance.send(info, msg['User']['UserName'])
 
 
 def main():
@@ -165,7 +157,7 @@ def main():
 if __name__ == '__main__':
     pkl_dir = os.path.dirname(os.path.abspath(__file__))
     name, py = os.path.basename(__file__).split('.')
-    newinstance = itchat.new_instance()
-    newinstance.auto_login(hotReload=True, enableCmdQR=-2, statusStorageDir='%s/pkls/%s.pkl' % (pkl_dir, name))
+    newInstance = itchat.new_instance()
+    newInstance.auto_login(hotReload=True, statusStorageDir='%s/pkls/%s.pkl' % (pkl_dir, name))
     main()
-    newinstance.run()
+    newInstance.run()
